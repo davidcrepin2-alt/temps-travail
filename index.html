@@ -12,101 +12,10 @@
 <meta name="apple-mobile-web-app-title" content="Temps travail">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-<link rel="manifest" href="manifest.webmanifest">
-<style>
-:root{
-  --bg:#f2f2f7; --card:#ffffff; --text:#1c1c1e; --muted:#6c6c70; --line:#e0e0e6;
-  --accent:#1f4e79; --accent-soft:#e3edf7; --pos:#1b7f3b; --neg:#c0392b; --input:#f7f7fa;
-  --tab:#ffffffee;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#000000; --card:#1c1c1e; --text:#f2f2f7; --muted:#9a9aa0; --line:#2e2e33;
-    --accent:#6fa8dc; --accent-soft:#1d2a38; --pos:#4cd17a; --neg:#ff6b5e; --input:#2a2a2e;
-    --tab:#1c1c1eee;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#000000; --card:#1c1c1e; --text:#f2f2f7; --muted:#9a9aa0; --line:#2e2e33;
-  --accent:#6fa8dc; --accent-soft:#1d2a38; --pos:#4cd17a; --neg:#ff6b5e; --input:#2a2a2e;
-  --tab:#1c1c1eee;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0}
-body{
-  background:var(--bg); color:var(--text);
-  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom));
-  -webkit-text-size-adjust:100%;
-}
-header{padding:14px 16px 6px}
-header h1{font-size:26px;margin:0;font-weight:700}
-main{padding:0 16px;max-width:640px;margin:0 auto}
-.view{display:none}
-.view.active{display:block}
-.card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
-.row{display:flex;gap:10px;align-items:center}
-.row > *{flex:1;min-width:0}
-label.f{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
-select,input{
-  width:100%;font:inherit;color:var(--text);background:var(--input);
-  border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-height:42px;
-  -webkit-appearance:none;appearance:none;
-}
-input[type="time"]{text-align:left}
-button{
-  font:inherit;font-weight:600;border:0;border-radius:12px;padding:12px 14px;
-  background:var(--accent);color:#fff;min-height:46px;cursor:pointer;
-}
-button.sec{background:var(--accent-soft);color:var(--accent)}
-button.danger{background:transparent;color:var(--neg);border:1px solid var(--neg)}
-button.icon{flex:0 0 46px;padding:0}
-.weekbar{display:flex;gap:8px;align-items:stretch}
-.weekbar .mid{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center}
-.weekbar .mid b{font-size:18px}
-.weekbar .mid span{font-size:13px;color:var(--muted)}
-.day h3{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:baseline}
-.day h3 small{font-weight:400;color:var(--muted);font-size:13px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.daysum{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
-.daysum b{color:var(--text)}
-.pos{color:var(--pos)!important}
-.neg{color:var(--neg)!important}
-.note{font-size:13px;color:var(--muted);margin-top:6px}
-.sum{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
-.sum .big{font-size:22px;font-weight:700}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.actions .full{grid-column:1/-1}
-.list .item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px}
-.list .item:last-child{border-bottom:0}
-.list .item .t{flex:1;min-width:0}
-.list .item .t small{display:block;color:var(--muted);font-size:13px}
-.list .item button{min-height:36px;padding:6px 10px;font-size:14px}
-h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:22px 4px 0;font-weight:600}
-nav.tabs{
-  position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--tab);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10;
-}
-nav.tabs button{flex:1;background:transparent;color:var(--muted);border-radius:0;font-size:12px;font-weight:500;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
-nav.tabs button svg{width:24px;height:24px}
-nav.tabs button.on{color:var(--accent)}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
-.toast.show{opacity:1}
-.codeedit{border-top:1px solid var(--line);padding:10px 0}
-.codeedit:first-child{border-top:0}
-.muted{color:var(--muted)}
-.note a{color:var(--accent)}
-</style>
 </head>
 <body>
 <div id="root"></div>
 <noscript><p style="padding:16px">Cette application nécessite JavaScript.</p></noscript>
-<script src="vendor/react.production.min.js" defer></script>
-<script src="vendor/react-dom.production.min.js" defer></script>
-<script src="vendor/htm.umd.js" defer></script>
-<script src="vendor/jspdf.umd.min.js" defer></script>
-<script src="vendor/jspdf.plugin.autotable.min.js" defer></script>
-<script type="module" src="app.js"></script>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

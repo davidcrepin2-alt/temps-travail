@@ -1,5 +1,5 @@
-# Publie l'app sur GitHub Pages à chaque push sur main,
-# en inscrivant le commit dans version.json (affiché dans Réglages).
+# À chaque push sur main : tests, compilation Vite, publication sur GitHub Pages.
+# Le commit (GITHUB_SHA) est injecté dans l'app et affiché dans Réglages.
 name: Déploiement GitHub Pages
 
 on:
@@ -25,19 +25,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Préparer le site
-        run: |
-          mkdir _site
-          cp -r index.html app.js logic.js sw.js manifest.webmanifest icon-*.png vendor _site/
-          SHORT="${GITHUB_SHA::7}"
-          DATE="$(git log -1 --format=%cI)"
-          printf '{"sha":"%s","short":"%s","date":"%s"}\n' "$GITHUB_SHA" "$SHORT" "$DATE" > _site/version.json
-          sed -i "s/__BUILD__/$SHORT/" _site/sw.js
-          cat _site/version.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Tests
+        run: npm test
+
+      - name: Compiler
+        run: npm run build
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

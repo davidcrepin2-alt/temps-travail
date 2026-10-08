@@ -103,6 +103,7 @@ Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installé
 | `rejected … fetch first` lors d'un push | Le dépôt GitHub contient une modification que le PC n'a pas (faite sur le site). Faire `git pull`, puis refaire le push. |
 | Le site affiche **404** | Juste après une activation : attendre quelques minutes. Sinon, vérifier les réglages ci-dessus (dépôt public, Pages sur `main` / root) et l'onglet Actions. |
 | L'iPhone garde l'ancienne version (code de version différent du dernier commit) | Ouvrir l'app avec du réseau, la fermer complètement et la rouvrir. Vérifier aussi dans l'onglet Actions que le déploiement a réussi. |
+| Croix rouge ❌ dans l'onglet Actions | Un test ou la compilation a échoué : **rien n'a été publié**, l'ancienne version reste en ligne. Cliquer sur la ligne rouge pour voir l'étape en erreur, puis demander à Claude de corriger. |
 | Réglages affiche « Version : locale (non publiée) » | Le site n'est pas publié par GitHub Actions : régler **Settings → Pages → Source** sur **GitHub Actions**, puis relancer le déploiement (Actions → Déploiement GitHub Pages → *Run workflow*). |
 
 ### À ne jamais faire
@@ -117,17 +118,43 @@ Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installé
 
 ### Fichiers
 
-| Fichier | Rôle |
-|---|---|
-| `index.html` | Page d'accueil : CSS (thème clair/sombre automatique, zones sûres iPhone), `<div id="root">` et chargement des scripts. |
-| `app.js` | Interface **React** (module ES) : composants `App`, `WeekView`, `DayCard`, `HistoryView`, `SettingsView`, `CodeEditor`, `VersionInfo`, `TabBar`. |
-| `logic.js` | Logique métier sans interface (module ES) : calculs, stockage, import, fiche PDF, partage. |
-| `sw.js` | Service worker : cache hors ligne, stratégie *réseau d'abord, cache si hors ligne*. `__BUILD__` est remplacé par le commit au déploiement. |
-| `.github/workflows/pages.yml` | Déploiement GitHub Pages par GitHub Actions : copie les fichiers dans `_site`, écrit `version.json` (`sha`, `short`, `date`), renomme le cache de `sw.js`. |
-| `manifest.webmanifest`, `icon-*.png` | Installation sur l'écran d'accueil. |
-| `vendor/` | React 18.3.1 + ReactDOM (UMD), htm 3.1.1, jsPDF 2.5.1 + jspdf-autotable 3.8.2, copiés localement (pas de CDN, pour le hors ligne). |
+Pile : **Vite 8 + React 19 + TypeScript**, PWA via **vite-plugin-pwa** (Workbox), PDF via **jsPDF 4 + jspdf-autotable 5**, tests via **Vitest**.
 
-**Pourquoi React sans compilation :** le PC n'a pas Node.js. L'app utilise donc React en version navigateur avec **htm**, une syntaxe très proche de JSX écrite dans des gabarits `` html`...` `` : `html`<${Composant} prop=${x} />`` au lieu de `<Composant prop={x} />`. Pas de `npm`, pas de build : les fichiers du dépôt sont servis tels quels.
+```
+temps-travail-app/
+├── index.html                 Page d'entrée Vite (métadonnées iPhone, <div id="root">)
+├── public/                    Icônes, copiées telles quelles
+├── src/
+│   ├── main.tsx               Démarrage React, enregistrement du service worker
+│   ├── App.tsx                État global, navigation par onglets, toasts
+│   ├── styles.css             Thème clair/sombre automatique, zones sûres iPhone
+│   ├── vite-env.d.ts          Types globaux (__COMMIT_SHA__, __COMMIT_DATE__, window.TT)
+│   ├── components/
+│   │   ├── WeekView.tsx       Onglet Semaine
+│   │   ├── DayCard.tsx        Carte d'un jour
+│   │   ├── HistoryView.tsx    Onglet Historique
+│   │   ├── SettingsView.tsx   Onglet Réglages (agents, codes, paramètres, sauvegarde)
+│   │   ├── CodeEditor.tsx     Édition d'un code horaire
+│   │   ├── VersionInfo.tsx    Commit publié (bas de Réglages)
+│   │   ├── TabBar.tsx         Barre d'onglets
+│   │   ├── inputs.tsx         Champs validés à la sortie (texte, année, HS précédente), listes de durées
+│   │   └── ui.ts              Petits utilitaires d'affichage
+│   └── lib/
+│       ├── types.ts           Types du modèle de données
+│       ├── logic.ts           Logique métier pure : calculs, semaines, stockage, import/export
+│       ├── logic.test.ts      Tests unitaires (Vitest), dont les valeurs de l'Excel
+│       ├── pdf.ts             Fiche PDF (chargée à la demande)
+│       └── share.ts           Partage iOS / téléchargement
+├── vite.config.ts             Base relative, injection du commit, configuration PWA
+├── tsconfig.json              TypeScript de l'app (src/)
+├── tsconfig.node.json         TypeScript de vite.config.ts
+├── package.json / package-lock.json
+└── .github/workflows/pages.yml  CI : npm ci → tests → build → GitHub Pages
+```
+
+| Fichier hors dépôt | Rôle |
+|---|---|
+| `node_modules/`, `dist/` | Dépendances installées et site compilé (régénérés, ignorés par git). |
 | `sauvegarde-initiale.json` | **Hors dépôt** (`.gitignore`), présent seulement dans le dossier local OneDrive. Contient les agents réels et l'historique repris de l'Excel. Ne jamais le publier : les noms des agents ne doivent pas être publics. |
 
 ### Règles de calcul (reprises des formules de la feuille « Saisie »)
@@ -165,19 +192,25 @@ Le fichier d'export a la forme `{ app: 'temps-travail', v: 1, exportedAt, settin
 
 ### Publier une modification
 
-1. Modifier les fichiers.
-2. `git add -A && git commit -m "…" && git push`. Le workflow redéploie en environ 1 minute. Le numéro de version et le cache hors ligne sont mis à jour **automatiquement** à partir du commit : rien à incrémenter à la main.
-3. Si un fichier est ajouté, l'ajouter aussi à la liste `FILES` de `sw.js` **et** à la commande `cp` de `.github/workflows/pages.yml` (sinon il n'est pas publié).
+1. Modifier les fichiers dans `src/`.
+2. Vérifier : `npm test` puis `npm run build` (contrôle TypeScript + compilation).
+3. `git add -A && git commit -m "…" && git push`. Le workflow refait `npm ci`, les tests et la compilation, puis publie `dist/` en environ 1 à 2 minutes. **Si un test échoue, rien n'est publié** et l'ancienne version reste en ligne.
+4. Le commit affiché et le cache hors ligne sont mis à jour automatiquement : rien à incrémenter à la main. Les nouveaux fichiers sont pris en compte par Vite sans autre configuration.
+
+Commandes : `npm run dev` (serveur de développement), `npm run build`, `npm run preview` (sert `dist/`), `npm test`, `npm run typecheck`.
+
+### Node.js sur le PC
+
+Node.js **n'est pas installé** sur le PC. Pour travailler en local, Claude utilise une version portable de Node (archive officielle `node-vXX-win-x64.zip` de nodejs.org, somme SHA-256 vérifiée), décompressée dans son dossier temporaire et ajoutée au `PATH` le temps des commandes. Sous Git Bash, écrire ce chemin sous la forme `/c/Users/...` et non `C:/Users/...` : les deux-points cassent le `PATH`. La compilation de référence reste celle de GitHub Actions (Node 24).
 
 ### Tester
 
-Aucun Node ni Python sur le PC de développement. Méthode utilisée :
-
-- un seul script PowerShell qui sert le dossier en local (`HttpListener`, port 8765), lance Edge headless puis s'arrête avec lui. Ne pas laisser de serveur tourner en tâche de fond : le PC manque parfois de mémoire ;
-- page de test temporaire (hors dépôt) qui charge `index.html` dans une iframe et appelle `window.TT` (exposé par `App` : `buildPdf`, `dayTime`, `dayHS`, `weekTotals`, `mondayOf`, `isoWeek`, `weeksInYear`, `parseDur`, `fmtDur`, `state`) ;
-- exécution : `msedge --headless=new --virtual-time-budget=15000 --dump-dom http://localhost:8765/_test.html` ;
-- avec React, pour simuler une saisie, il faut passer par le *setter* natif puis déclencher les événements : `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,v)`, puis `input` et `change`. Les champs validés à la sortie (HS précédente, année, textes des réglages) attendent un événement `focusout`. Laisser environ 40 ms après chaque action pour le rendu ;
-- un faux `version.json` dans le dossier de test permet de vérifier l'affichage du commit.
+- **Tests unitaires** (`src/lib/logic.test.ts`, Vitest) : semaines ISO, durées, calculs, valeurs de l'historique Excel, reprise de la HS précédente, import. Lancés par `npm test` en local **et** dans la CI avant chaque publication.
+- **Tests de bout en bout** (hors dépôt, à refaire au besoin) :
+  - compiler avec un faux commit : `GITHUB_SHA=abcdef… npx vite build` ;
+  - un seul script PowerShell sert `dist/` (`HttpListener`, port 8765), lance Edge headless (`msedge --headless=new --virtual-time-budget=15000 --dump-dom http://localhost:8765/_test.html`), puis s'arrête avec lui. Ne pas laisser de serveur tourner en tâche de fond : le PC manque parfois de mémoire ;
+  - la page de test charge `index.html` dans une iframe et utilise `window.TT` (exposé par `App` : toutes les fonctions de `logic.ts`, `buildPdf` asynchrone, `state`) ;
+  - avec React, pour simuler une saisie : *setter* natif `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,v)`, puis événements `input` et `change`. Les champs validés à la sortie (HS précédente, année, textes des réglages) attendent un `focusout`. Laisser environ 40 ms après chaque action.
 
 Valeurs de référence issues de l'historique Excel (agent à 100 %) :
 
@@ -198,3 +231,4 @@ Valeurs de référence issues de l'historique Excel (agent à 100 %) :
 - **2026-10-08** : v1.0.0. Première version : reprise complète du classeur (saisie, historique, paramètres, fiche PDF), mise en ligne sur GitHub Pages.
 - **2026-10-08** : README. Ajout de la partie « GitHub pour débutant ».
 - **2026-10-08** : passage de l'interface en **React** (React 18 + htm, sans build), logique isolée dans `logic.js`. Déploiement par GitHub Actions avec `version.json` : Réglages affiche le code du commit à la place de « version 1.0.0 ».
+- **2026-10-08** : migration vers un projet standard **Vite + React 19 + TypeScript** (`src/`, composants `.tsx`). PWA via vite-plugin-pwa. Tests Vitest exécutés dans la CI avant publication. Commit injecté au build (`__COMMIT_SHA__`) à la place de `version.json`.

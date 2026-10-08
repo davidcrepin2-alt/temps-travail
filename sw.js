@@ -1,8 +1,10 @@
-// Cache hors ligne : changer CACHE à chaque nouvelle version publiée.
-const CACHE = 'temps-travail-v1';
+// Cache hors ligne. __BUILD__ est remplacé par le commit lors du déploiement
+// (.github/workflows/pages.yml) : chaque publication crée un nouveau cache.
+const CACHE = 'temps-travail-__BUILD__';
 const FILES = [
-  './', 'index.html', 'app.js', 'manifest.webmanifest',
+  './', 'index.html', 'app.js', 'logic.js', 'manifest.webmanifest',
   'icon-180.png', 'icon-192.png', 'icon-512.png',
+  'vendor/react.production.min.js', 'vendor/react-dom.production.min.js', 'vendor/htm.umd.js',
   'vendor/jspdf.umd.min.js', 'vendor/jspdf.plugin.autotable.min.js',
 ];
 

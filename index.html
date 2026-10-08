@@ -96,117 +96,17 @@ nav.tabs button.on{color:var(--accent)}
 .codeedit{border-top:1px solid var(--line);padding:10px 0}
 .codeedit:first-child{border-top:0}
 .muted{color:var(--muted)}
+.note a{color:var(--accent)}
 </style>
 </head>
 <body>
-<header><h1 id="title">Semaine</h1></header>
-<main>
-
-<!-- ======== SEMAINE ======== -->
-<section id="v-semaine" class="view active">
-  <div class="card">
-    <div class="row">
-      <div style="flex:2">
-        <label class="f" for="agent">Agent</label>
-        <select id="agent"></select>
-      </div>
-      <div>
-        <label class="f" for="quotite">Quotité</label>
-        <select id="quotite"></select>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="weekbar">
-      <button class="sec icon" id="prevW" aria-label="Semaine précédente">◀</button>
-      <div class="mid"><b id="weekLbl"></b><span id="weekDates"></span></div>
-      <button class="sec icon" id="nextW" aria-label="Semaine suivante">▶</button>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <div><label class="f" for="year">Année</label><input id="year" type="number" inputmode="numeric" min="2000" max="2100"></div>
-      <div><label class="f" for="week">N° semaine</label><select id="week"></select></div>
-      <div style="align-self:flex-end"><button class="sec" id="todayW" style="width:100%">Aujourd'hui</button></div>
-    </div>
-    <div class="note" id="savedNote"></div>
-  </div>
-
-  <div id="days"></div>
-
-  <div class="card sum">
-    <span>HS générées sur la semaine</span><b id="hsWeek"></b>
-    <span>HS semaine précédente</span>
-    <div class="row" style="justify-content:flex-end;gap:6px">
-      <input id="prevH" type="text" inputmode="text" placeholder="0h00" style="width:100px;flex:0 0 100px;text-align:right">
-    </div>
-    <span>HS à l'issue de la semaine</span><b class="big" id="hsCumul"></b>
-  </div>
-  <div class="note" id="prevNote" style="margin:-4px 4px 0"></div>
-
-  <div class="actions">
-    <button class="full" id="btnSave">Enregistrer la semaine</button>
-    <button class="sec" id="btnPdf">Fiche PDF</button>
-    <button class="danger" id="btnReset">Remise à zéro</button>
-  </div>
-</section>
-
-<!-- ======== HISTORIQUE ======== -->
-<section id="v-historique" class="view">
-  <div class="card">
-    <label class="f" for="histAgent">Agent</label>
-    <select id="histAgent"></select>
-  </div>
-  <div class="card list" id="histList"></div>
-</section>
-
-<!-- ======== REGLAGES ======== -->
-<section id="v-reglages" class="view">
-  <h2>Agents</h2>
-  <div class="card list" id="agentList"></div>
-  <div class="card">
-    <div class="row">
-      <div style="flex:2"><label class="f" for="newAgent">Nom (NOM Prénom)</label><input id="newAgent" type="text" autocapitalize="words"></div>
-      <div><label class="f" for="newQuot">Quotité</label><select id="newQuot"></select></div>
-    </div>
-    <button style="width:100%;margin-top:10px" id="addAgent">Ajouter l'agent</button>
-  </div>
-
-  <h2>Codes horaires</h2>
-  <div class="card" id="codeList"></div>
-  <div class="card"><button class="sec" style="width:100%" id="addCode">Ajouter un code</button></div>
-
-  <h2>Paramètres</h2>
-  <div class="card">
-    <div class="row">
-      <div><label class="f" for="daily">Temps journalier (100 %)</label><input id="daily" type="time"></div>
-      <div><label class="f" for="city">Ville (fiche)</label><input id="city" type="text"></div>
-    </div>
-    <div style="margin-top:10px"><label class="f" for="motif">Motif par défaut (fiche)</label><input id="motif" type="text"></div>
-  </div>
-
-  <h2>Sauvegarde</h2>
-  <div class="card">
-    <p class="note" style="margin-top:0">Les données sont stockées uniquement dans ce téléphone. Exportez régulièrement une sauvegarde (dans Fichiers / OneDrive) pour ne rien perdre.</p>
-    <div class="actions" style="margin-bottom:0">
-      <button id="btnExport">Exporter</button>
-      <button class="sec" id="btnImport">Importer</button>
-    </div>
-    <input id="importFile" type="file" accept=".json,application/json" hidden>
-  </div>
-  <p class="note" style="text-align:center">Temps de travail · version <span id="ver"></span></p>
-</section>
-
-</main>
-
-<nav class="tabs">
-  <button data-v="semaine" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Semaine</button>
-  <button data-v="historique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Historique</button>
-  <button data-v="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Réglages</button>
-</nav>
-<div class="toast" id="toast"></div>
-
+<div id="root"></div>
+<noscript><p style="padding:16px">Cette application nécessite JavaScript.</p></noscript>
+<script src="vendor/react.production.min.js" defer></script>
+<script src="vendor/react-dom.production.min.js" defer></script>
+<script src="vendor/htm.umd.js" defer></script>
 <script src="vendor/jspdf.umd.min.js" defer></script>
 <script src="vendor/jspdf.plugin.autotable.min.js" defer></script>
-<script src="app.js" defer></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

@@ -60,8 +60,10 @@ Les données sont stockées **uniquement dans le téléphone** (aucun serveur). 
 ### Comment l'app est mise à jour
 
 ```
-Dossier sur le PC  --(commit + push)-->  Dépôt GitHub  --(GitHub Pages, ~1 min)-->  Site web  --(ouverture de l'app)-->  iPhone
+Dossier sur le PC  --(commit + push)-->  Dépôt GitHub  --(GitHub Actions, ~1 min)-->  Site web  --(ouverture de l'app)-->  iPhone
 ```
+
+À chaque push, GitHub Actions publie le site et y inscrit le **code du commit** (7 caractères, ex. `c2ecd04`). Ce code apparaît en bas de l'onglet **Réglages** de l'app : s'il correspond au dernier commit visible sur GitHub, l'iPhone a bien la dernière version. Toucher le code ouvre le commit sur GitHub.
 
 Le dossier de travail sur le PC est `C:\Users\david\OneDrive\Bureau\Code\temps-travail-app`.
 
@@ -76,8 +78,8 @@ Le dossier de travail sur le PC est `C:\Users\david\OneDrive\Bureau\Code\temps-t
 ### Vérifier que la mise en ligne a fonctionné
 
 1. Sur la page du dépôt, onglet **Actions**.
-2. La dernière ligne « pages build and deployment » doit avoir une coche verte ✅ (un rond jaune 🟡 = en cours, une croix rouge ❌ = échec).
-3. Ouvrir l'app sur l'iPhone **avec du réseau** : la nouvelle version est chargée. Si rien ne change, fermer complètement l'app (balayer vers le haut) et la rouvrir.
+2. La dernière ligne « Déploiement GitHub Pages » doit avoir une coche verte ✅ (un rond jaune 🟡 = en cours, une croix rouge ❌ = échec : cliquer dessus pour voir l'erreur).
+3. Ouvrir l'app sur l'iPhone **avec du réseau**, puis **Réglages** : le code de version en bas de page doit être celui du dernier commit. Sinon, fermer complètement l'app (balayer vers le haut) et la rouvrir.
 
 ### Retrouver l'historique ou annuler une modification
 
@@ -89,8 +91,7 @@ Le dossier de travail sur le PC est `C:\Users\david\OneDrive\Bureau\Code\temps-t
 | Réglage | Valeur attendue |
 |---|---|
 | **General → Danger Zone → Change visibility** | **Public** (obligatoire pour GitHub Pages gratuit) |
-| **Pages → Build and deployment → Source** | Deploy from a branch |
-| **Pages → Branch** | `main` et `/ (root)` |
+| **Pages → Build and deployment → Source** | **GitHub Actions** (et non « Deploy from a branch », sinon le code de version affiche « locale (non publiée) ») |
 
 Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installée sur l'iPhone ne fonctionnerait plus.
 
@@ -101,7 +102,8 @@ Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installé
 | `Invalid username or token. Password authentication is not supported` lors d'un push | GitHub refuse le mot de passe du compte. Il faut un **jeton** : https://github.com/settings/tokens → *Generate new token (classic)* → cocher **repo** → copier le jeton, puis le coller à la place du mot de passe quand Git le demande. Un jeton expire : en générer un nouveau à expiration. |
 | `rejected … fetch first` lors d'un push | Le dépôt GitHub contient une modification que le PC n'a pas (faite sur le site). Faire `git pull`, puis refaire le push. |
 | Le site affiche **404** | Juste après une activation : attendre quelques minutes. Sinon, vérifier les réglages ci-dessus (dépôt public, Pages sur `main` / root) et l'onglet Actions. |
-| L'iPhone garde l'ancienne version | Ouvrir l'app avec du réseau, la fermer complètement et la rouvrir. Côté code : vérifier que le numéro `CACHE` de `sw.js` a bien été changé. |
+| L'iPhone garde l'ancienne version (code de version différent du dernier commit) | Ouvrir l'app avec du réseau, la fermer complètement et la rouvrir. Vérifier aussi dans l'onglet Actions que le déploiement a réussi. |
+| Réglages affiche « Version : locale (non publiée) » | Le site n'est pas publié par GitHub Actions : régler **Settings → Pages → Source** sur **GitHub Actions**, puis relancer le déploiement (Actions → Déploiement GitHub Pages → *Run workflow*). |
 
 ### À ne jamais faire
 
@@ -117,11 +119,15 @@ Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installé
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Structure des 3 écrans + CSS (thème clair/sombre automatique, zones sûres iPhone). |
-| `app.js` | Toute la logique : calculs, stockage, rendu, PDF, export/import. JavaScript vanilla, aucun build. |
-| `sw.js` | Service worker : cache hors ligne, stratégie *réseau d'abord, cache si hors ligne*. |
+| `index.html` | Page d'accueil : CSS (thème clair/sombre automatique, zones sûres iPhone), `<div id="root">` et chargement des scripts. |
+| `app.js` | Interface **React** (module ES) : composants `App`, `WeekView`, `DayCard`, `HistoryView`, `SettingsView`, `CodeEditor`, `VersionInfo`, `TabBar`. |
+| `logic.js` | Logique métier sans interface (module ES) : calculs, stockage, import, fiche PDF, partage. |
+| `sw.js` | Service worker : cache hors ligne, stratégie *réseau d'abord, cache si hors ligne*. `__BUILD__` est remplacé par le commit au déploiement. |
+| `.github/workflows/pages.yml` | Déploiement GitHub Pages par GitHub Actions : copie les fichiers dans `_site`, écrit `version.json` (`sha`, `short`, `date`), renomme le cache de `sw.js`. |
 | `manifest.webmanifest`, `icon-*.png` | Installation sur l'écran d'accueil. |
-| `vendor/` | jsPDF 2.5.1 + jspdf-autotable 3.8.2, copiés localement (pas de CDN, pour le hors ligne). |
+| `vendor/` | React 18.3.1 + ReactDOM (UMD), htm 3.1.1, jsPDF 2.5.1 + jspdf-autotable 3.8.2, copiés localement (pas de CDN, pour le hors ligne). |
+
+**Pourquoi React sans compilation :** le PC n'a pas Node.js. L'app utilise donc React en version navigateur avec **htm**, une syntaxe très proche de JSX écrite dans des gabarits `` html`...` `` : `html`<${Composant} prop=${x} />`` au lieu de `<Composant prop={x} />`. Pas de `npm`, pas de build : les fichiers du dépôt sont servis tels quels.
 | `sauvegarde-initiale.json` | **Hors dépôt** (`.gitignore`), présent seulement dans le dossier local OneDrive. Contient les agents réels et l'historique repris de l'Excel. Ne jamais le publier : les noms des agents ne doivent pas être publics. |
 
 ### Règles de calcul (reprises des formules de la feuille « Saisie »)
@@ -160,17 +166,18 @@ Le fichier d'export a la forme `{ app: 'temps-travail', v: 1, exportedAt, settin
 ### Publier une modification
 
 1. Modifier les fichiers.
-2. **Incrémenter `CACHE` dans `sw.js`** (ex. `temps-travail-v2`) et `VERSION` dans `app.js`, pour que les iPhone récupèrent bien la nouvelle version.
-3. `git add -A && git commit -m "…" && git push`. GitHub Pages redéploie en environ 1 minute. L'app se met à jour à l'ouverture suivante avec du réseau.
-4. Si un fichier est ajouté, l'ajouter aussi à la liste `FILES` de `sw.js`.
+2. `git add -A && git commit -m "…" && git push`. Le workflow redéploie en environ 1 minute. Le numéro de version et le cache hors ligne sont mis à jour **automatiquement** à partir du commit : rien à incrémenter à la main.
+3. Si un fichier est ajouté, l'ajouter aussi à la liste `FILES` de `sw.js` **et** à la commande `cp` de `.github/workflows/pages.yml` (sinon il n'est pas publié).
 
 ### Tester
 
 Aucun Node ni Python sur le PC de développement. Méthode utilisée :
 
-- servir le dossier en local (petit serveur PowerShell `HttpListener`, port 8765) ;
-- page de test temporaire qui charge `index.html` dans une iframe et appelle `window.TT` (fonctions exposées : `buildPdf`, `dayTime`, `dayHS`, `weekTotals`, `mondayOf`, `isoWeek`, `weeksInYear`, `parseDur`, `fmtDur`, `state`) ;
-- exécution avec Edge headless : `msedge --headless=new --virtual-time-budget=8000 --dump-dom http://localhost:8765/_test.html`.
+- un seul script PowerShell qui sert le dossier en local (`HttpListener`, port 8765), lance Edge headless puis s'arrête avec lui. Ne pas laisser de serveur tourner en tâche de fond : le PC manque parfois de mémoire ;
+- page de test temporaire (hors dépôt) qui charge `index.html` dans une iframe et appelle `window.TT` (exposé par `App` : `buildPdf`, `dayTime`, `dayHS`, `weekTotals`, `mondayOf`, `isoWeek`, `weeksInYear`, `parseDur`, `fmtDur`, `state`) ;
+- exécution : `msedge --headless=new --virtual-time-budget=15000 --dump-dom http://localhost:8765/_test.html` ;
+- avec React, pour simuler une saisie, il faut passer par le *setter* natif puis déclencher les événements : `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,v)`, puis `input` et `change`. Les champs validés à la sortie (HS précédente, année, textes des réglages) attendent un événement `focusout`. Laisser environ 40 ms après chaque action pour le rendu ;
+- un faux `version.json` dans le dossier de test permet de vérifier l'affichage du commit.
 
 Valeurs de référence issues de l'historique Excel (agent à 100 %) :
 
@@ -190,3 +197,4 @@ Valeurs de référence issues de l'historique Excel (agent à 100 %) :
 
 - **2026-10-08** : v1.0.0. Première version : reprise complète du classeur (saisie, historique, paramètres, fiche PDF), mise en ligne sur GitHub Pages.
 - **2026-10-08** : README. Ajout de la partie « GitHub pour débutant ».
+- **2026-10-08** : passage de l'interface en **React** (React 18 + htm, sans build), logique isolée dans `logic.js`. Déploiement par GitHub Actions avec `version.json` : Réglages affiche le code du commit à la place de « version 1.0.0 ».

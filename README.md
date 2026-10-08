@@ -43,6 +43,74 @@ Les données sont stockées **uniquement dans le téléphone** (aucun serveur). 
 
 ---
 
+## GitHub pour débutant
+
+### Les mots à connaître
+
+| Mot | Ce que ça veut dire ici |
+|---|---|
+| **GitHub** | Site qui stocke le code de l'app et l'héberge gratuitement. |
+| **Dépôt** (*repository*, *repo*) | Le « dossier » de l'app sur GitHub : `davidcrepin2-alt/temps-travail`. |
+| **Commit** | Un enregistrement de modifications, avec un message qui les décrit. GitHub garde tous les commits : on peut toujours revenir en arrière. |
+| **Push** | Envoyer les commits du PC vers GitHub. |
+| **Branche `main`** | La version principale du code. C'est elle qui est publiée. |
+| **GitHub Pages** | Le service qui transforme le dépôt en site web à l'adresse `davidcrepin2-alt.github.io/temps-travail`. |
+| **Git** | Le logiciel installé sur le PC qui fait les commits et les push. |
+
+### Comment l'app est mise à jour
+
+```
+Dossier sur le PC  --(commit + push)-->  Dépôt GitHub  --(GitHub Pages, ~1 min)-->  Site web  --(ouverture de l'app)-->  iPhone
+```
+
+Le dossier de travail sur le PC est `C:\Users\david\OneDrive\Bureau\Code\temps-travail-app`.
+
+**Méthode simple : demander à Claude.** Dans Claude Code ouvert sur le dossier `Code`, décrire la modification voulue (ex. « ajoute le code N12 de nuit 21h-7h ») et demander de la pousser sur GitHub. Claude modifie, teste, fait le commit et le push.
+
+**Méthode manuelle, pour une petite correction de texte :**
+1. Sur la page du dépôt, cliquer sur le fichier (ex. `README.md`), puis sur l'icône **crayon** ✏️.
+2. Modifier, puis cliquer sur **Commit changes…** → **Commit changes**.
+3. ⚠️ Le PC n'a pas encore cette modification. Avant toute autre modification sur le PC, la récupérer en tapant dans Claude Code :
+   `! cd "C:\Users\david\OneDrive\Bureau\Code\temps-travail-app" && git pull`
+
+### Vérifier que la mise en ligne a fonctionné
+
+1. Sur la page du dépôt, onglet **Actions**.
+2. La dernière ligne « pages build and deployment » doit avoir une coche verte ✅ (un rond jaune 🟡 = en cours, une croix rouge ❌ = échec).
+3. Ouvrir l'app sur l'iPhone **avec du réseau** : la nouvelle version est chargée. Si rien ne change, fermer complètement l'app (balayer vers le haut) et la rouvrir.
+
+### Retrouver l'historique ou annuler une modification
+
+- **Voir les modifications passées** : sur la page du dépôt, cliquer sur **« X commits »** (en haut à droite de la liste des fichiers). Chaque commit montre ce qui a changé, en vert (ajouté) et en rouge (supprimé).
+- **Revenir en arrière** : demander à Claude « annule le dernier commit de l'app et pousse sur GitHub ». Il utilise `git revert`, qui crée un nouveau commit inverse sans rien effacer de l'historique.
+
+### Réglages importants (onglet Settings du dépôt)
+
+| Réglage | Valeur attendue |
+|---|---|
+| **General → Danger Zone → Change visibility** | **Public** (obligatoire pour GitHub Pages gratuit) |
+| **Pages → Build and deployment → Source** | Deploy from a branch |
+| **Pages → Branch** | `main` et `/ (root)` |
+
+Ne pas renommer le dépôt : l'adresse de l'app changerait et l'icône installée sur l'iPhone ne fonctionnerait plus.
+
+### Problèmes fréquents
+
+| Symptôme | Cause et solution |
+|---|---|
+| `Invalid username or token. Password authentication is not supported` lors d'un push | GitHub refuse le mot de passe du compte. Il faut un **jeton** : https://github.com/settings/tokens → *Generate new token (classic)* → cocher **repo** → copier le jeton, puis le coller à la place du mot de passe quand Git le demande. Un jeton expire : en générer un nouveau à expiration. |
+| `rejected … fetch first` lors d'un push | Le dépôt GitHub contient une modification que le PC n'a pas (faite sur le site). Faire `git pull`, puis refaire le push. |
+| Le site affiche **404** | Juste après une activation : attendre quelques minutes. Sinon, vérifier les réglages ci-dessus (dépôt public, Pages sur `main` / root) et l'onglet Actions. |
+| L'iPhone garde l'ancienne version | Ouvrir l'app avec du réseau, la fermer complètement et la rouvrir. Côté code : vérifier que le numéro `CACHE` de `sw.js` a bien été changé. |
+
+### À ne jamais faire
+
+- ❌ Mettre sur GitHub un fichier contenant des **noms d'agents** ou des données personnelles (le dépôt est public et visible par tous). C'est pour cela que `sauvegarde-initiale.json` reste uniquement sur le PC.
+- ❌ Partager son **jeton** GitHub : il donne le droit de modifier le dépôt.
+- ❌ Supprimer le dépôt : l'app disparaîtrait de l'iPhone (les données restent dans le téléphone, mais l'app ne se mettrait plus à jour et ne pourrait plus être réinstallée).
+
+---
+
 ## Notes techniques (référence pour la maintenance, y compris par Claude)
 
 ### Fichiers
@@ -121,3 +189,4 @@ Valeurs de référence issues de l'historique Excel (agent à 100 %) :
 ### Journal
 
 - **2026-10-08** : v1.0.0. Première version : reprise complète du classeur (saisie, historique, paramètres, fiche PDF), mise en ligne sur GitHub Pages.
+- **2026-10-08** : README. Ajout de la partie « GitHub pour débutant ».
